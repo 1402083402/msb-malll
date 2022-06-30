@@ -56,6 +56,11 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
         return list;
     }
 
+    @Override
+    public void removeCategoryByIds(List<Long> ids) {
+        baseMapper.deleteBatchIds(ids);
+    }
+
     /**
      *  查找该大类下的所有的小类  递归查找
      * @param categoryEntity 某个大类
