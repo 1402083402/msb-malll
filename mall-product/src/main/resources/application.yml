@@ -14,8 +14,13 @@ spring:
       secret-key: ZFjmPIHZWUO8w6FcK83CWvTIreqKLQ
       oss:
         endpoint: oss-cn-chengdu.aliyuncs.com
+        bucket: wangjiang-mall
   application:
     name: mall-product
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+  thymeleaf:
+    cache: true  #关闭Thymeleaf的缓存
 mybatis-plus:
   global-config:
     db-config:

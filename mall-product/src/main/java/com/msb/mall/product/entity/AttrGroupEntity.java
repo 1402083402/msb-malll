@@ -1,5 +1,6 @@
 package com.msb.mall.product.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 
@@ -45,4 +46,10 @@ public class AttrGroupEntity implements Serializable {
 	 */
 	private Long catelogId;
 
+	/**
+	 * 修改数据的时候记录类别信息
+	 * [2,22,225]
+	 */
+	@TableField(exist = false)
+	private Long[] catelogPath;
 }

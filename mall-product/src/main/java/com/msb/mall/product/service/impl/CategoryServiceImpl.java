@@ -1,9 +1,15 @@
 package com.msb.mall.product.service.impl;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.msb.mall.product.entity.BrandEntity;
+import com.msb.mall.product.service.CategoryBrandRelationService;
+import com.msb.mall.product.vo.Catalog2VO;
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -15,10 +21,13 @@ import com.msb.common.utils.Query;
 import com.msb.mall.product.dao.CategoryDao;
 import com.msb.mall.product.entity.CategoryEntity;
 import com.msb.mall.product.service.CategoryService;
+import org.springframework.transaction.annotation.Transactional;
 
 
 @Service("categoryService")
 public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity> implements CategoryService {
+    @Autowired
+    private CategoryBrandRelationService categoryBrandRelationService;
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
@@ -47,7 +56,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
                 .filter(categoryEntity -> categoryEntity.getParentCid() == 0)
                 .map(categoryEntity -> {
                     // 根据大类找到多有的小类  递归的方式实现
-                    categoryEntity.setChildren(getCategoryChildren(categoryEntity,categoryEntities));
+                    categoryEntity.setChildren(getCategoryChildren(categoryEntity, categoryEntities));
                     return categoryEntity;
                 }).sorted((entity1, entity2) -> {
                     return (entity1.getSort() == null ? 0 : entity1.getSort()) - (entity2.getSort() == null ? 0 : entity2.getSort());
@@ -61,9 +70,50 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
         baseMapper.deleteBatchIds(ids);
     }
 
+    @Override
+    public Long[] findCatelogPath(Long catelogId) {
+        List<Long> paths = new ArrayList<>();
+        List<Long> parentPath = findParentPath(catelogId, paths);
+        Collections.reverse(parentPath);
+        return parentPath.toArray(new Long[parentPath.size()]);
+    }
+
+    @Transactional
+    @Override
+    public void updateDetail(CategoryEntity entity) {
+        this.updateById(entity);
+        if (!StringUtils.isEmpty(entity.getName())) {
+            //同步更新级联数据
+            categoryBrandRelationService.updateCatelogName(entity.getCatId(), entity.getName());
+            //TODO 同步更新其它冗余数据
+        }
+    }
+
     /**
-     *  查找该大类下的所有的小类  递归查找
-     * @param categoryEntity 某个大类
+     * 查询所有商品的大类（一级分类）
+     *
+     * @return
+     */
+    @Override
+    public List<CategoryEntity> getLeve1Category() {
+        List<CategoryEntity> list = baseMapper.queryLeve1Category();
+        return list;
+    }
+
+
+    private List<Long> findParentPath(Long catelogId, List<Long> paths) {
+        paths.add(catelogId);
+        CategoryEntity entity = this.getById(catelogId);
+        if (entity.getParentCid() != 0) {
+            findParentPath(entity.getParentCid(), paths);
+        }
+        return paths;
+    }
+
+    /**
+     * 查找该大类下的所有的小类  递归查找
+     *
+     * @param categoryEntity   某个大类
      * @param categoryEntities 所有的类别数据
      * @return
      */
@@ -81,6 +131,63 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
             return (entity1.getSort() == null ? 0 : entity1.getSort()) - (entity2.getSort() == null ? 0 : entity2.getSort());
         }).collect(Collectors.toList());
         return collect;
+    }
+
+    /**
+     * 跟进父编号获取对应的子菜单信息
+     *
+     * @param list
+     * @param parentCid
+     * @return
+     */
+    private List<CategoryEntity> queryByParenCid(List<CategoryEntity> list, Long parentCid) {
+        List<CategoryEntity> collect = list.stream().filter(item -> {
+            return item.getParentCid().equals(parentCid);
+        }).collect(Collectors.toList());
+        return collect;
+    }
+
+    /**
+     * 查询所有分类数据，并且完成一级二级三级的关联
+     *
+     * @return
+     */
+    @Override
+    public Map<String, List<Catalog2VO>> getCatelog2JSON() {
+        // 获取所有的分类数据
+        List<CategoryEntity> list = baseMapper.selectList(new QueryWrapper<CategoryEntity>());
+        // 获取所有的一级分类的数据
+        List<CategoryEntity> leve1Category = this.queryByParenCid(list, 0l);
+        // 把一级分类的数据转换为Map容器 key就是一级分类的编号， value就是一级分类对应的二级分类的数据
+        Map<String, List<Catalog2VO>> map = leve1Category.stream().collect(Collectors.toMap(
+                key -> key.getCatId().toString()
+                , value -> {
+                    // 根据一级分类的编号，查询出对应的二级分类的数据
+                    List<CategoryEntity> l2Catalogs = this.queryByParenCid(list, value.getCatId());
+                    List<Catalog2VO> Catalog2VOs = null;
+                    if (l2Catalogs != null) {
+                        Catalog2VOs = l2Catalogs.stream().map(l2 -> {
+                            // 需要把查询出来的二级分类的数据填充到对应的Catelog2VO中
+                            Catalog2VO catalog2VO = new Catalog2VO(l2.getParentCid().toString(), null, l2.getCatId().toString(), l2.getName());
+                            // 根据二级分类的数据找到对应的三级分类的信息
+                            List<CategoryEntity> l3Catelogs = this.queryByParenCid(list, l2.getCatId());
+                            if (l3Catelogs != null) {
+                                // 获取到的二级分类对应的三级分类的数据
+                                List<Catalog2VO.Catalog3VO> catalog3VOS = l3Catelogs.stream().map(l3 -> {
+                                    Catalog2VO.Catalog3VO catalog3VO = new Catalog2VO.Catalog3VO(l3.getParentCid().toString(), l3.getCatId().toString(), l3.getName());
+                                    return catalog3VO;
+                                }).collect(Collectors.toList());
+                                // 三级分类关联二级分类
+                                catalog2VO.setCatalog3List(catalog3VOS);
+                            }
+                            return catalog2VO;
+                        }).collect(Collectors.toList());
+                    }
+
+                    return Catalog2VOs;
+                }
+        ));
+        return map;
     }
 
 }
