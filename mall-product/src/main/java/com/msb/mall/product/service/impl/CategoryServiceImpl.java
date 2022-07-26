@@ -1,5 +1,7 @@
 package com.msb.mall.product.service.impl;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.msb.mall.product.entity.BrandEntity;
 import com.msb.mall.product.service.CategoryBrandRelationService;
@@ -7,9 +9,11 @@ import com.msb.mall.product.vo.Catalog2VO;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -28,6 +32,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity> implements CategoryService {
     @Autowired
     private CategoryBrandRelationService categoryBrandRelationService;
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
@@ -147,13 +153,25 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
         return collect;
     }
 
-    /**
-     * 查询所有分类数据，并且完成一级二级三级的关联
-     *
-     * @return
-     */
-    @Override
-    public Map<String, List<Catalog2VO>> getCatelog2JSON() {
+
+
+    public  Map<String, List<Catalog2VO>> getCatelog2JSONWithRedisLock() {
+        String keys = "catalogJSON";
+        //先去缓存中查询有没有数据如果有就返回，否则就查询数据库
+        return getCatelog2JSONDbWithRedisLock(keys);
+    }
+
+    private Map<String, List<Catalog2VO>> getCatelog2JSONDbWithRedisLock(String keys) {
+        //从redis中获取父类的信息
+        String catalogJSON = stringRedisTemplate.opsForValue().get(keys);
+        if (!StringUtils.isEmpty(catalogJSON)) {
+            //说明缓存命中
+            //表示缓存命中了数据,那么从缓存中获取信息，然后返回
+            Map<String, List<Catalog2VO>> stringListMap = JSON.parseObject(catalogJSON, new TypeReference<Map<String, List<Catalog2VO>>>() {
+            });
+            return stringListMap;
+        }
+
         // 获取所有的分类数据
         List<CategoryEntity> list = baseMapper.selectList(new QueryWrapper<CategoryEntity>());
         // 获取所有的一级分类的数据
@@ -187,7 +205,117 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
                     return Catalog2VOs;
                 }
         ));
+        if (list == null) {
+            //那就说明数据库中也不存在，防止缓存穿透
+            stringRedisTemplate.opsForValue().set(keys, "1", 5, TimeUnit.SECONDS);
+
+        } else {
+            //从数据库中查询到的数据，我们要给缓存中也存储一份
+            //防止缓存雪崩
+            String json = JSON.toJSONString(map);
+            stringRedisTemplate.opsForValue().set(keys, json, 10,TimeUnit.MINUTES);
+        }
         return map;
+    }
+
+    /**
+     * 查询所有分类数据，并且完成一级二级三级的关联
+     *
+     * @return
+     */
+
+    public synchronized Map<String, List<Catalog2VO>> getCatelog2JSONForDb() {
+        String keys = "catalogJSON";
+        //先去缓存中查询有没有数据如果有就返回，否则就查询数据库
+        //从redis中获取父类的信息
+        String catalogJSON = stringRedisTemplate.opsForValue().get(keys);
+        if (!StringUtils.isEmpty(catalogJSON)) {
+            //说明缓存命中
+            //表示缓存命中了数据,那么从缓存中获取信息，然后返回
+            Map<String, List<Catalog2VO>> stringListMap = JSON.parseObject(catalogJSON, new TypeReference<Map<String, List<Catalog2VO>>>() {
+            });
+            return stringListMap;
+        }
+
+        // 获取所有的分类数据
+        List<CategoryEntity> list = baseMapper.selectList(new QueryWrapper<CategoryEntity>());
+        // 获取所有的一级分类的数据
+        List<CategoryEntity> leve1Category = this.queryByParenCid(list, 0l);
+        // 把一级分类的数据转换为Map容器 key就是一级分类的编号， value就是一级分类对应的二级分类的数据
+        Map<String, List<Catalog2VO>> map = leve1Category.stream().collect(Collectors.toMap(
+                key -> key.getCatId().toString()
+                , value -> {
+                    // 根据一级分类的编号，查询出对应的二级分类的数据
+                    List<CategoryEntity> l2Catalogs = this.queryByParenCid(list, value.getCatId());
+                    List<Catalog2VO> Catalog2VOs = null;
+                    if (l2Catalogs != null) {
+                        Catalog2VOs = l2Catalogs.stream().map(l2 -> {
+                            // 需要把查询出来的二级分类的数据填充到对应的Catelog2VO中
+                            Catalog2VO catalog2VO = new Catalog2VO(l2.getParentCid().toString(), null, l2.getCatId().toString(), l2.getName());
+                            // 根据二级分类的数据找到对应的三级分类的信息
+                            List<CategoryEntity> l3Catelogs = this.queryByParenCid(list, l2.getCatId());
+                            if (l3Catelogs != null) {
+                                // 获取到的二级分类对应的三级分类的数据
+                                List<Catalog2VO.Catalog3VO> catalog3VOS = l3Catelogs.stream().map(l3 -> {
+                                    Catalog2VO.Catalog3VO catalog3VO = new Catalog2VO.Catalog3VO(l3.getParentCid().toString(), l3.getCatId().toString(), l3.getName());
+                                    return catalog3VO;
+                                }).collect(Collectors.toList());
+                                // 三级分类关联二级分类
+                                catalog2VO.setCatalog3List(catalog3VOS);
+                            }
+                            return catalog2VO;
+                        }).collect(Collectors.toList());
+                    }
+
+                    return Catalog2VOs;
+                }
+        ));
+        if (list == null) {
+            //那就说明数据库中也不存在，防止缓存穿透
+            stringRedisTemplate.opsForValue().set(keys, "1", 5, TimeUnit.SECONDS);
+
+        } else {
+            //从数据库中查询到的数据，我们要给缓存中也存储一份
+            //防止缓存雪崩
+            String json = JSON.toJSONString(map);
+            stringRedisTemplate.opsForValue().set(keys, json, 10,TimeUnit.MINUTES);
+        }
+        return map;
+    }
+
+    /**
+     * 查询出所有的二级和三级分类的数据
+     * 并封装为Map<String, Catalog2VO>对象
+     *
+     * @return
+     */
+    //@Override
+    public Map<String, List<Catalog2VO>> getCatelog2JSON() {
+        String key = "catalogJSON";
+
+        // 从Redis中获取分类的信息
+        String catalogJSON = stringRedisTemplate.opsForValue().get(key);
+        if (org.springframework.util.StringUtils.isEmpty(catalogJSON)) {
+
+            // 缓存中没有数据，需要从数据库中查询
+            Map<String, List<Catalog2VO>> catelog2JSONForDb = getCatelog2JSONWithRedisLock();
+            if (catelog2JSONForDb == null) {
+                //那就说明数据库中也不存在，防止缓存穿透
+                stringRedisTemplate.opsForValue().set(key, "1", 5, TimeUnit.SECONDS);
+
+            } else {
+                //从数据库中查询到的数据，我们要给缓存中也存储一份
+                //防止缓存雪崩
+                String json = JSON.toJSONString(catelog2JSONForDb);
+                stringRedisTemplate.opsForValue().set(key, json, 10,TimeUnit.MINUTES);
+            }
+            return catelog2JSONForDb;
+        }
+
+        // 表示缓存命中了数据，那么从缓存中获取信息，然后返回
+        Map<String, List<Catalog2VO>> stringListMap = JSON.parseObject(catalogJSON, new TypeReference<Map<String, List<Catalog2VO>>>() {
+        });
+        return stringListMap;
     }
 
 }
