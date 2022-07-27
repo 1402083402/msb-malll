@@ -10,6 +10,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -155,13 +156,66 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 
 
 
-    public  Map<String, List<Catalog2VO>> getCatelog2JSONWithRedisLock() {
+    public Map<String, List<Catalog2VO>> getCatelog2JSONDbWithRedisLock() {
         String keys = "catalogJSON";
-        //先去缓存中查询有没有数据如果有就返回，否则就查询数据库
-        return getCatelog2JSONDbWithRedisLock(keys);
+        // 加锁 在执行插入操作的同时设置了过期时间
+        String uuid = UUID.randomUUID().toString();
+        Boolean lock = stringRedisTemplate.opsForValue().setIfAbsent("lock", uuid,300,TimeUnit.SECONDS);
+        if(lock){
+            Map<String, List<Catalog2VO>> data = null;
+            try {
+                // 加锁成功
+                data = getDataForDB(keys);
+            }finally {
+                String srcipts = "if redis.call('get',KEYS[1]) == ARGV[1]  then return redis.call('del',KEYS[1]) else  return 0 end ";
+                // 通过Redis的lua脚本实现 查询和删除操作的原子性
+                stringRedisTemplate.execute(new DefaultRedisScript<Long>(srcipts,Long.class)
+                        ,Arrays.asList("lock"),uuid);
+            }
+            return data;
+        }else{
+            // 加锁失败
+            // 休眠+重试
+            // Thread.sleep(1000);
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            return getCatelog2JSONDbWithRedisLock();
+        }
+    }
+    public Map<String, List<Catalog2VO>> getCatelog2JSONDbWithRedisson() {
+        String keys = "catalogJSON";
+        // 加锁 在执行插入操作的同时设置了过期时间
+        String uuid = UUID.randomUUID().toString();
+        Boolean lock = stringRedisTemplate.opsForValue().setIfAbsent("lock", uuid,300,TimeUnit.SECONDS);
+        if(lock){
+            Map<String, List<Catalog2VO>> data = null;
+            try {
+                // 加锁成功
+                data = getDataForDB(keys);
+            }finally {
+                String srcipts = "if redis.call('get',KEYS[1]) == ARGV[1]  then return redis.call('del',KEYS[1]) else  return 0 end ";
+                // 通过Redis的lua脚本实现 查询和删除操作的原子性
+                stringRedisTemplate.execute(new DefaultRedisScript<Long>(srcipts,Long.class)
+                        ,Arrays.asList("lock"),uuid);
+            }
+            return data;
+        }else{
+            // 加锁失败
+            // 休眠+重试
+            // Thread.sleep(1000);
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            return getCatelog2JSONDbWithRedisLock();
+        }
     }
 
-    private Map<String, List<Catalog2VO>> getCatelog2JSONDbWithRedisLock(String keys) {
+    private Map<String, List<Catalog2VO>> getDataForDB(String keys) {
         //从redis中获取父类的信息
         String catalogJSON = stringRedisTemplate.opsForValue().get(keys);
         if (!StringUtils.isEmpty(catalogJSON)) {
@@ -298,7 +352,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
         if (org.springframework.util.StringUtils.isEmpty(catalogJSON)) {
 
             // 缓存中没有数据，需要从数据库中查询
-            Map<String, List<Catalog2VO>> catelog2JSONForDb = getCatelog2JSONWithRedisLock();
+            Map<String, List<Catalog2VO>> catelog2JSONForDb = getCatelog2JSONDbWithRedisson();
             if (catelog2JSONForDb == null) {
                 //那就说明数据库中也不存在，防止缓存穿透
                 stringRedisTemplate.opsForValue().set(key, "1", 5, TimeUnit.SECONDS);
