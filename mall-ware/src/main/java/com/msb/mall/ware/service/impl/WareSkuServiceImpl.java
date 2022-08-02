@@ -92,24 +92,19 @@ public class WareSkuServiceImpl extends ServiceImpl<WareSkuDao, WareSkuEntity> i
 
     /**
      * 获取每个skuId对应的库存
-     *
      * @param skuIds
      * @return
      */
     @Override
     public List<SkuHasStockDto> getSkusHasStock(List<Long> skuIds) {
         List<SkuHasStockDto> list = skuIds.stream().map(skuId -> {
-                    Long count = baseMapper.getSkuStock(skuId);
-                    SkuHasStockDto dto = new SkuHasStockDto();
-                    if (count != null) {
-
-                        dto.setSkuId(skuId);
-                        dto.setHasStock(count > 0);
-                        System.out.println(dto);
-                    }
-                    return dto;
-                }).filter(dto -> dto.getSkuId()!=null)
-                .collect(Collectors.toList());
+            System.out.println("=======");
+            Long count = baseMapper.getSkuStock(skuId);
+            SkuHasStockDto dto = new SkuHasStockDto();
+            dto.setSkuId(skuId);
+            dto.setHasStock(count > 0);
+            return dto;
+        }).collect(Collectors.toList());
         return list;
     }
 

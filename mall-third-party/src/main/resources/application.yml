@@ -9,7 +9,12 @@ spring:
       oss:
         endpoint: oss-cn-chengdu.aliyuncs.com
         bucket: wangjiang-mall
+      sms:
+        host: https://dfsns.market.alicloudapi.com
+        path: /data/send_sms
+        method: POST
+        appCode: 51070d83172c4851a730541e1de330da
   application:
     name: mall-third
 server:
-  port: 8090
+  port: 8100

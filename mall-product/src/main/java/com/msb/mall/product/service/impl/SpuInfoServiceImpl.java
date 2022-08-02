@@ -292,10 +292,11 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
             model.setSubTitle(item.getSkuTitle());
             model.setSkuPrice(item.getPrice());
             model.setSkuImg(item.getSkuDefaultImg());
+            System.out.println("=======");
 
             // hasStock 是否有库存 --》 库存系统查询  一次远程调用获取所有的skuId对应的库存信息
             if(skusHasStockMap == null){
-                model.setHasStock(true);
+                model.setHasStock(false);
             }else{
                 model.setHasStock(skusHasStockMap.get(item.getSkuId()));
             }

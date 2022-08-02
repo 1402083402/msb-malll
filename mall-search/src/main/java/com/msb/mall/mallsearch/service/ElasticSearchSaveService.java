@@ -8,4 +8,11 @@ import java.util.List;
 public interface ElasticSearchSaveService {
 
     Boolean productStatusUp(List<SkuESModel> skuESModels) throws IOException;
+
+    /**
+     * @author Jason
+     * @date 2022/7/28
+     * hello ashen one
+     */
+
 }
