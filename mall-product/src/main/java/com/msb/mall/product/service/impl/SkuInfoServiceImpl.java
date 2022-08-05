@@ -41,7 +41,8 @@ public class SkuInfoServiceImpl extends ServiceImpl<SkuInfoDao, SkuInfoEntity> i
 
     @Autowired
     SkuSaleAttrValueService skuSaleAttrValueService;
-
+    @Autowired
+    ThreadPoolExecutor threadPoolExecutor;
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
@@ -139,12 +140,14 @@ public class SkuInfoServiceImpl extends ServiceImpl<SkuInfoDao, SkuInfoEntity> i
         vo.setImages(images);
         //3.获取spu中的销售属性的组合
         List<SkuItemSaleAttrVo> saleAttrs = skuSaleAttrValueService.getSkuSaleAttrValueBySpuId(spuId);
+        vo.setSaleAttrs(saleAttrs);
         //4.获取spu的介绍
         SpuInfoDescEntity spuInfoDescEntity=spuInfoDescService.getById(spuId);
         vo.setDesc(spuInfoDescEntity);
         //5.获取spu的规格参数
         List<SpuItemGroupAttrVo> groupAttrVo=attrGroupService.getAttrgroupWithSpuId(spuId,catalogId);
         vo.setBaseAttrs(groupAttrVo);
+
         return vo;
     }
 
