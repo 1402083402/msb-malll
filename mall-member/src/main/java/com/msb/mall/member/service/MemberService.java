@@ -5,6 +5,7 @@ import com.msb.common.utils.PageUtils;
 import com.msb.mall.member.entity.MemberEntity;
 import com.msb.mall.member.vo.MemberLoginVO;
 import com.msb.mall.member.vo.MemberReigerVO;
+import com.msb.mall.member.vo.SocialUser;
 
 import java.util.Map;
 
@@ -22,5 +23,12 @@ public interface MemberService extends IService<MemberEntity> {
     void register(MemberReigerVO vo);
 
     MemberEntity login(MemberLoginVO vo);
+
+    /**
+     * 社交登录
+     * @param vo
+     * @return
+     */
+    MemberEntity login(SocialUser vo);
 }
 

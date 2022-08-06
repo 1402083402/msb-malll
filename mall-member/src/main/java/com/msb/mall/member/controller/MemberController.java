@@ -3,6 +3,7 @@ package com.msb.mall.member.controller;
 import java.util.Arrays;
 import java.util.Map;
 
+import com.alibaba.fastjson.JSON;
 import com.msb.common.exception.BizCodeEnume;
 import com.msb.mall.member.exception.PhoneExsitExecption;
 import com.msb.mall.member.exception.UsernameExsitException;
@@ -10,6 +11,7 @@ import com.msb.mall.member.exception.UsernameExsitException;
 import com.msb.mall.member.vo.MemberLoginVO;
 import com.msb.mall.member.vo.MemberReigerVO;
 
+import com.msb.mall.member.vo.SocialUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -125,6 +127,12 @@ public class MemberController {
     }
 
 
+    @RequestMapping("/oauth2/login")
+    public R socialLogin(@RequestBody SocialUser vo){
+        MemberEntity entity = memberService.login(vo);
+
+        return R.ok().put("entity", JSON.toJSONString(entity));
+    }
 
 
 

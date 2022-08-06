@@ -1,5 +1,8 @@
 package com.msb.mall.member.service.impl;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.msb.common.utils.HttpUtils;
 import com.msb.mall.member.entity.MemberLevelEntity;
 import com.msb.mall.member.exception.PhoneExsitExecption;
 import com.msb.mall.member.exception.UsernameExsitException;
@@ -7,6 +10,7 @@ import com.msb.mall.member.service.MemberLevelService;
 import com.msb.mall.member.vo.MemberLoginVO;
 import com.msb.mall.member.vo.MemberReigerVO;
 import com.msb.mall.member.vo.SocialUser;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -86,6 +90,61 @@ public class MemberServiceImpl extends ServiceImpl<MemberDao, MemberEntity> impl
         return null;
     }
 
+
+    /**
+     * 社交登录
+     * @param vo
+     * @return
+     */
+    @Override
+    public MemberEntity login(SocialUser vo) {
+        String uid = vo.getUid();
+        // 如果该用户是第一次社交登录，那么需要注册
+        // 如果不是第一次社交登录 那么就更新相关信息 登录功能
+        MemberEntity memberEntity = this.getOne(new QueryWrapper<MemberEntity>().eq("social_uid", uid));
+        if(memberEntity != null){
+            // 说明当前用户已经注册过了 更新token和过期时间
+            MemberEntity entity = new MemberEntity();
+            entity.setId(memberEntity.getId());
+            entity.setAccessToken(vo.getAccessToken());
+            entity.setExpiresIn(vo.getExpiresIn());
+            this.updateById(entity);
+            // 在返回的登录用户信息中我们同步的也保存 token和过期时间
+            memberEntity.setAccessToken(vo.getAccessToken());
+            memberEntity.setExpiresIn(vo.getExpiresIn());
+            return memberEntity;
+        }
+        // 表示用户是第一提交，那么我们就需要对应的来注册
+        MemberEntity entity = new MemberEntity();
+        entity.setAccessToken(vo.getAccessToken());
+        entity.setExpiresIn(vo.getExpiresIn());
+        entity.setSocialUid(vo.getUid());
+        // 通过token调用微博开发的接口来获取用户的相关信息
+        try {
+            Map<String,String> querys = new HashMap<>();
+            querys.put("access_token",vo.getAccessToken());
+            querys.put("uid",vo.getUid());
+            HttpResponse response = HttpUtils.doGet("https://api.weibo.com"
+                    , "/2/users/show.json"
+                    , "get"
+                    , new HashMap<>()
+                    , querys
+            );
+            if(response.getStatusLine().getStatusCode() == 200){
+                String json = EntityUtils.toString(response.getEntity());
+                JSONObject jsonObject = JSON.parseObject(json);
+                String nickName = jsonObject.getString("screen_name");
+                String gender = jsonObject.getString("gender");
+                entity.setNickname(nickName);
+                entity.setGender("m".equals(gender)?1:0);
+            }
+        }catch (Exception e){
+
+        }
+        // 注册用户信息
+        this.save(entity);
+        return entity;
+    }
 
 
     /**

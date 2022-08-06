@@ -7,13 +7,7 @@ import java.io.Serializable;
 import java.util.Date;
 import lombok.Data;
 
-/**
- * 会员
- * 
- * @author wj
- * @email 1402083402@qq.com.com
- * @date 2022-06-23 21:19:45
- */
+
 @Data
 @TableName("ums_member")
 public class MemberEntity implements Serializable {
@@ -92,5 +86,9 @@ public class MemberEntity implements Serializable {
 	 * 注册时间
 	 */
 	private Date createTime;
+
+	private String socialUid;
+	private String accessToken;
+	private long expiresIn;
 
 }

@@ -41,19 +41,19 @@ spring:
         - id: msbmall_host_route1
           uri: lb://mall-product
           predicates:
-            - Host=msb.mall.com
+            - Host=mall.msb.com
         - id: msbmall_host_route2
           uri: lb://mall-product
           predicates:
-            - Host=msb.item.com
+            - Host=item.msb.com
         - id: msbmall_host_route3
           uri: lb://mall-search
           predicates:
-            - Host=msb.search.com
+            - Host=search.msb.com
         - id: msbmall_host_route4
           uri: lb://mall-auth
           predicates:
-            - Host=msb.auth.com
+            - Host=auth.msb.com
 # localhost:8070/app/captcha.jpg -->
 # localhost:8080/app/captcha.jpg localhost:8080/renren-fast/captcha.jpg
 # 指定注册中心的服务端口
