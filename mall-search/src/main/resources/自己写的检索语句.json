@@ -1,0 +1,141 @@
+#GET /mall_product/_search
+{
+  "from": 0,
+  "size": 5,
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "match": {
+            "subTitle": {
+              "query": "华为",
+              "operator": "OR",
+              "prefix_length": 0,
+              "max_expansions": 50,
+              "fuzzy_transpositions": true,
+              "lenient": false,
+              "zero_terms_query": "NONE",
+              "auto_generate_synonyms_phrase_query": true,
+              "boost": 1
+            }
+          }
+        }
+      ],
+      "filter": [
+        {
+          "term": {
+            "catalogId": {
+              "value": 225,
+              "boost": 1
+            }
+          }
+        },
+        {
+          "term": {
+            "hasStock": {
+              "value": true,
+              "boost": 1
+            }
+          }
+        },
+        {
+          "range": {
+            "skuPrice": {
+              "from": "5000",
+              "to": "7000",
+              "include_lower": true,
+              "include_upper": true,
+              "boost": 1
+            }
+          }
+        },
+        {
+          "nested": {
+            "query": {
+              "bool": {
+                "must": [
+                  {
+                    "term": {
+                      "attrs.attrId": {
+                        "value": "13",
+                        "boost": 1
+                      }
+                    }
+                  },
+                  {
+                    "terms": {
+                      "attrs.attrValue": [
+                        "NOH-ALOO/NOH-AL10"
+                      ],
+                      "boost": 1
+                    }
+                  }
+                ],
+                "adjust_pure_negative": true,
+                "boost": 1
+              }
+            },
+            "path": "attrs",
+            "ignore_unmapped": false,
+            "score_mode": "none",
+            "boost": 1
+          }
+        },
+        {
+          "nested": {
+            "query": {
+              "bool": {
+                "must": [
+                  {
+                    "term": {
+                      "attrs.attrId": {
+                        "value": "10",
+                        "boost": 1
+                      }
+                    }
+                  },
+                  {
+                    "terms": {
+                      "attrs.attrValue": [
+                        "11",
+                        "12"
+                      ],
+                      "boost": 1
+                    }
+                  }
+                ],
+                "adjust_pure_negative": true,
+                "boost": 1
+              }
+            },
+            "path": "attrs",
+            "ignore_unmapped": false,
+            "score_mode": "none",
+            "boost": 1
+          }
+        }
+      ],
+      "adjust_pure_negative": true,
+      "boost": 1
+    }
+  },
+  "sort": [
+    {
+      "skuPrice": {
+        "order": "asc"
+      }
+    }
+  ],
+  "highlight": {
+    "pre_tags": [
+      "<b style='color:red'>"
+    ],
+    "post_tags": [
+      "</b>"
+    ],
+    "fields": {
+      "subTitle": {}
+    }
+  }
+}
+
