@@ -2,9 +2,11 @@ package com.msb.mall.controller;
 
 import com.alibaba.fastjson.JSON;
 
+import com.msb.common.constant.AuthConstant;
 import com.msb.common.utils.HttpUtils;
 import com.msb.common.utils.R;
 
+import com.msb.common.vo.MemberVO;
 import com.msb.mall.fegin.MemberFeginService;
 
 import com.msb.mall.vo.SocialUser;
@@ -31,14 +33,14 @@ public class OAuth2Controller {
 
     @RequestMapping("/oauth2/weibo/success")
     public String weiboOAuth(@RequestParam("code") String code
-                                , HttpSession session, HttpServletResponse response) throws Exception {
+            , HttpSession session, HttpServletResponse response) throws Exception {
         System.out.println("code = " + code);
-        Map<String,String> body = new HashMap<>();
-        body.put("client_id","3469195078");
-        body.put("client_secret","12e0d817932d2925fa95c7813ae7be16");
-        body.put("grant_type","authorization_code");
-        body.put("redirect_uri","http://auth.msb.com/oauth2/weibo/success");
-        body.put("code",code);
+        Map<String, String> body = new HashMap<>();
+        body.put("client_id", "3469195078");
+        body.put("client_secret", "12e0d817932d2925fa95c7813ae7be16");
+        body.put("grant_type", "authorization_code");
+        body.put("redirect_uri", "http://auth.msb.com/oauth2/weibo/success");
+        body.put("code", code);
         // 根据Code获取对应的Token信息
         HttpResponse post = HttpUtils.doPost("https://api.weibo.com"
                 , "/oauth2/access_token"
@@ -48,7 +50,7 @@ public class OAuth2Controller {
                 , body
         );
         int statusCode = post.getStatusLine().getStatusCode();
-        if(statusCode != 200){
+        if (statusCode != 200) {
             // 说明获取Token失败,就调回到登录页面
             return "redirect:http://auth.msb.com/login.html";
         }
@@ -56,14 +58,13 @@ public class OAuth2Controller {
         String json = EntityUtils.toString(post.getEntity());
         SocialUser socialUser = JSON.parseObject(json, SocialUser.class);
         R r = memberFeginService.socialLogin(socialUser);
-        if(r.getCode() != 0){
+        if (r.getCode() != 0) {
             // 登录错误
             return "redirect:http://auth.msb.com/login.html";
         }
-        String entityJson=(String)r.get("entity");
-        System.out.println("->>>>>"+entityJson);
-
-
+        String entityJson = (String) r.get("entity");
+        MemberVO memberVO = JSON.parseObject(entityJson, MemberVO.class);
+        session.setAttribute(AuthConstant.AUTH_SESSION_REDIS, memberVO);
         // 注册成功就需要调整到商城的首页
         return "redirect:http://mall.msb.com/home";
     }

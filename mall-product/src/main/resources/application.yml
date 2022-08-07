@@ -31,6 +31,10 @@ spring:
       #key-prefix: wj_
       use-key-prefix: true
       cache-null-values: true  #是否缓存空值,防止缓存穿透
+  session:
+    store-type: redis
+    redis:
+      namespace: spring:session
 mybatis-plus:
   global-config:
     db-config:
