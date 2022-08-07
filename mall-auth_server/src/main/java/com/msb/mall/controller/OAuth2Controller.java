@@ -29,15 +29,15 @@ public class OAuth2Controller {
     @Autowired
     private MemberFeginService memberFeginService;
 
-    @RequestMapping("/oauth/weibo/success")
+    @RequestMapping("/oauth2/weibo/success")
     public String weiboOAuth(@RequestParam("code") String code
                                 , HttpSession session, HttpServletResponse response) throws Exception {
         System.out.println("code = " + code);
         Map<String,String> body = new HashMap<>();
-        body.put("client_id","1709923922");
-        body.put("client_secret","f1cb3fd632c4f4f4b496ed323907a643");
+        body.put("client_id","3469195078");
+        body.put("client_secret","12e0d817932d2925fa95c7813ae7be16");
         body.put("grant_type","authorization_code");
-        body.put("redirect_uri","http://auth.msb.com/oauth/weibo/success");
+        body.put("redirect_uri","http://auth.msb.com/oauth2/weibo/success");
         body.put("code",code);
         // 根据Code获取对应的Token信息
         HttpResponse post = HttpUtils.doPost("https://api.weibo.com"

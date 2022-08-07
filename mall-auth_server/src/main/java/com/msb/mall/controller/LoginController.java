@@ -88,7 +88,7 @@ public class LoginController {
                 R r = memberFeginService.register(vo);
                 if(r.getCode() == 0){
                     // 注册成功
-                    return "redirect:http://msb.auth.com/login.html";
+                    return "redirect:http://auth.msb.com/login.html";
                 }else{
                     // 注册失败
                     map.put("msg",r.getCode()+":"+r.get("msg"));
@@ -108,11 +108,13 @@ public class LoginController {
      */
     @PostMapping("/login")
     public String login(LoginVo loginVo ,
-                        RedirectAttributes redirectAttributes){
+                        RedirectAttributes redirectAttributes,
+                        HttpSession session){
         R r = memberFeginService.login(loginVo);
         if(r.getCode() == 0){
+            session.setAttribute("loginUser","bobo烤鸭");
             // 表示登录成功
-            return "redirect:http://msb.mall.com/home";
+            return "redirect:http://mall.msb.com/home";
         }
         // 表示登录失败,重新跳转到登录页面
         return "redirect:http://auth.msb.com/login.html";
