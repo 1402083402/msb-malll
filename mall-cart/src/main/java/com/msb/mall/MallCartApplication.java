@@ -1,4 +1,4 @@
-package com.msb.mall.mallsearch;
+package com.msb.mall;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -8,11 +8,11 @@ import org.springframework.session.data.redis.config.annotation.web.http.EnableR
 
 @EnableRedisHttpSession
 @EnableDiscoveryClient
-@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class })
-public class MallSearchApplication {
+@SpringBootApplication(exclude = DataSourceAutoConfiguration.class)
+public class MallCartApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(MallSearchApplication.class, args);
+        SpringApplication.run(MallCartApplication.class, args);
     }
 
 }
