@@ -95,7 +95,7 @@
             </b>
             <ul>
                 <li>
-                    <a href="http://auth.msb.com/login.html">你好，请登录:[[${session.loginUser}]]</a>
+                    <a href="http://auth.msb.com/login.html">[[${session.loginUser !=null?session.loginUser.nickname:'你好，请登录:'}]]</a>
                 </li>
                 <li>
                     <a href="http://auth.msb.com/reg.html" class="li_2">免费注册</a>
@@ -614,7 +614,7 @@
 <script type="text/javascript">
     function search() {
         var keyword = $("#searchText").val()
-        window.location.href = "http://msb.search.com/list.html?keyword=" + keyword;
+        window.location.href = "http://search.msb.com/list.html?keyword=" + keyword;
 
     }
 
@@ -627,3 +627,12 @@
 <script type="text/javascript" src="/static/index/js/left,top.js"></script>
 <script type="text/javascript" src="/static/index/js/catalogLoadernew.js"></script>
 </html>
+Footer
+© 2022 GitHub, Inc.
+Footer navigation
+Terms
+Privacy
+Security
+Status
+Docs
+Contact GitHub

@@ -58,7 +58,7 @@
                 </li>
             </ul>
             <ul class="header_ul_right">
-                <li style="border: 0;"><a href="/static/item/../登录页面\index.html" class="aa">你好，请登录</a></li>
+                <li style="border: 0;"><a href="/static/item/../登录页面\index.html" class="aa">[[${session.loginUser !=null?session.loginUser.nickname:'你好，请登录:'}]]</a></li>
                 <li><a href="/static/item/../注册页面\index.html" style="color: red;">免费注册</a> |</li>
                 <li><a href="/static/item/javascript:;" class="aa">我的订单</a> |</li>
                 <li class="jingdong"><a href="/static/item/javascript:;">我的京东</a><span
@@ -639,8 +639,8 @@
                         </div>
                     </div>
                     <div class="box-btns-two">
-                        <a href="/static/item/../商品分类\index.html">
-                            立即预约
+                        <a href="http://cart.msb.com/addCart">
+                            加入购物车
                         </a>
                     </div>
                     <div class="box-btns-three">
@@ -672,43 +672,43 @@
 
         </div>
     </div>
-    <!--欲约抢购流程-->
-    <div class="qianggoulioucheng">
-        <div class="lioucheng">
-            <h3>欲约抢购流程</h3>
-        </div>
-        <!--抢购步骤-->
-        <ul class="qianggoubuzhao">
-            <li>
-                <img src="/static/item/img/shop_03.png"/>
-                <dl class="buzhou">
-                    <dt>1.等待预约</dt>
-                    <dl>预约即将开始</dl>
-                </dl>
-            </li>
-            <li>
-                <img src="/static/item/img/shop_04.png"/>
-                <dl class="buzhou">
-                    <dt>2.预约中</dt>
-                    <dl>2017-11-15 10:35 2017-11-15 23:59</dl>
-                </dl>
-            </li>
-            <li>
-                <img src="/static/item/img/shop_05.png"/>
-                <dl class="buzhou">
-                    <dt>3.等待抢购</dt>
-                    <dl>抢购即将开始</dl>
-                </dl>
-            </li>
-            <li>
-                <img src="/static/item/img/shop_06.png"/>
-                <dl class="buzhou">
-                    <dt>4.抢购中</dt>
-                    <dl></dl>
-                </dl>
-            </li>
-        </ul>
-    </div>
+<!--    &lt;!&ndash;欲约抢购流程&ndash;&gt;-->
+<!--    <div class="qianggoulioucheng">-->
+<!--        <div class="lioucheng">-->
+<!--            <h3>欲约抢购流程</h3>-->
+<!--        </div>-->
+<!--        &lt;!&ndash;抢购步骤&ndash;&gt;-->
+<!--        <ul class="qianggoubuzhao">-->
+<!--            <li>-->
+<!--                <img src="/static/item/img/shop_03.png"/>-->
+<!--                <dl class="buzhou">-->
+<!--                    <dt>1.等待预约</dt>-->
+<!--                    <dl>预约即将开始</dl>-->
+<!--                </dl>-->
+<!--            </li>-->
+<!--            <li>-->
+<!--                <img src="/static/item/img/shop_04.png"/>-->
+<!--                <dl class="buzhou">-->
+<!--                    <dt>2.预约中</dt>-->
+<!--                    <dl>2017-11-15 10:35 2017-11-15 23:59</dl>-->
+<!--                </dl>-->
+<!--            </li>-->
+<!--            <li>-->
+<!--                <img src="/static/item/img/shop_05.png"/>-->
+<!--                <dl class="buzhou">-->
+<!--                    <dt>3.等待抢购</dt>-->
+<!--                    <dl>抢购即将开始</dl>-->
+<!--                </dl>-->
+<!--            </li>-->
+<!--            <li>-->
+<!--                <img src="/static/item/img/shop_06.png"/>-->
+<!--                <dl class="buzhou">-->
+<!--                    <dt>4.抢购中</dt>-->
+<!--                    <dl></dl>-->
+<!--                </dl>-->
+<!--            </li>-->
+<!--        </ul>-->
+<!--    </div>-->
 
     <div class="ShopXiangqing">
         <div class="allLeft">
@@ -821,7 +821,7 @@
 
             </ul>
             <button class="Lijiyuyuessss">
-                立即预约
+                加入购物车
             </button>
             <ul class="shopjieshaos posi" style="display: none;">
                 <li class="jieshoa" style="background: #e4393c;">
