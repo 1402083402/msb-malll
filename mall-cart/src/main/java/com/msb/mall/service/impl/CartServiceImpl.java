@@ -82,7 +82,6 @@ public class CartServiceImpl implements ICartService {
         }
         CartItem item = new CartItem();
         R rr = productFeignService.info(skuId);
-        String skuInfoJSON1 = (String) rr.get("skuInfoJSON");
         CompletableFuture future1 = CompletableFuture.runAsync(()->{
             // 1.远程调用获取 商品信息
             R r = productFeignService.info(skuId);
@@ -94,14 +93,13 @@ public class CartServiceImpl implements ICartService {
             item.setImage(vo.getSkuDefaultImg());
             item.setSkuId(skuId);
             item.setTitle(vo.getSkuTitle());
-            System.out.println("----------------------------1"+item.toString());
+            item.setSpuId(vo.getSpuId());
         },executor);
 
         CompletableFuture future2 = CompletableFuture.runAsync(()->{
             // 2.获取商品的销售属性
             List<String> skuSaleAttrs = productFeignService.getSkuSaleAttrs(skuId);
             item.setSkuAttr(skuSaleAttrs);
-            System.out.println("----------------------------2"+item.toString());
         },executor);
 
         CompletableFuture.allOf(future1,future2).get();

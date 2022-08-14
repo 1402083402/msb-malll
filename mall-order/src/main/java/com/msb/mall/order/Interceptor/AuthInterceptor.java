@@ -1,4 +1,4 @@
-package com.msb.mall.order.interceptor;
+package com.msb.mall.order.Interceptor;
 
 import com.msb.common.constant.AuthConstant;
 import com.msb.common.vo.MemberVO;

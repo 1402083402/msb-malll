@@ -1,6 +1,7 @@
 package com.msb.mall.order.config;
 
-import com.msb.mall.order.interceptor.AuthInterceptor;
+
+import com.msb.mall.order.Interceptor.AuthInterceptor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
