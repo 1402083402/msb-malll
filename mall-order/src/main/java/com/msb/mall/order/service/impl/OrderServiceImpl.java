@@ -71,21 +71,38 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> impleme
         return new PageUtils(page);
     }
 
+
     @Override
     public OrderConfirmVo confirmOrder() {
         OrderConfirmVo vo = new OrderConfirmVo();
         MemberVO memberVO = (MemberVO) AuthInterceptor.threadLocal.get();
+        // 在主线程中获取 RequestAttributes
+        RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
+        CompletableFuture<Void> future1 = CompletableFuture.runAsync(() -> {
+            // RequestContextHolder 绑定主线程中的 RequestAttributes
+            RequestContextHolder.setRequestAttributes(requestAttributes);
             // 1.查询当前登录用户对应的会员的地址信息
             Long id = memberVO.getId();
             List<MemberAddressVo> addresses = memberFeginService.getAddress(id);
             vo.setAddress(addresses);
+        }, executor);
 
-
-
+        CompletableFuture<Void> future2 = CompletableFuture.runAsync(() -> {
+            // RequestContextHolder 绑定主线程中的 RequestAttributes
+            RequestContextHolder.setRequestAttributes(requestAttributes);
             // 2.查询购物车中选中的商品信息
             List<OrderItemVo> userCartItems = cartFeginService.getUserCartItems();
             vo.setItems(userCartItems);
+        }, executor);
 
+        // 主线程需要等待所有的子线程完成后继续
+        try {
+            CompletableFuture.allOf(future1,future2).get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
 
         return vo;
     }
