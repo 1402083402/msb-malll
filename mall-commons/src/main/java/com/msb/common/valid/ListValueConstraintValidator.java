@@ -1,9 +1,7 @@
-package com.msb.common.exception.valid;
+package com.msb.common.valid;
 
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
-import java.lang.annotation.Annotation;
-import java.sql.ClientInfoStatus;
 import java.util.HashSet;
 
 /**

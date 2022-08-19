@@ -3,8 +3,9 @@ package com.msb.mall.product.controller;
 import java.util.Arrays;
 import java.util.Map;
 
-import com.msb.common.exception.valid.groups.AddGroupsInterface;
-import com.msb.common.exception.valid.groups.UpdateGroupsInterface;
+
+import com.msb.common.valid.groups.AddGroupsInterface;
+import com.msb.common.valid.groups.UpdateGroupsInterface;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;

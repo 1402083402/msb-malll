@@ -5,9 +5,10 @@ import com.baomidou.mybatisplus.annotation.TableName;
 
 import java.io.Serializable;
 
-import com.msb.common.exception.valid.ListValue;
-import com.msb.common.exception.valid.groups.AddGroupsInterface;
-import com.msb.common.exception.valid.groups.UpdateGroupsInterface;
+
+import com.msb.common.valid.ListValue;
+import com.msb.common.valid.groups.AddGroupsInterface;
+import com.msb.common.valid.groups.UpdateGroupsInterface;
 import lombok.Data;
 import org.hibernate.validator.constraints.URL;
 

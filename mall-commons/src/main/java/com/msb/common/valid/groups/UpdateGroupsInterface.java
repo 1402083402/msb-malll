@@ -1,4 +1,4 @@
-package com.msb.common.exception.valid.groups;
+package com.msb.common.valid.groups;
 
 /**
  * @author Jason
