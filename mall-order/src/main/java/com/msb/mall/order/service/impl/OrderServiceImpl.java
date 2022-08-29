@@ -13,14 +13,16 @@ import com.msb.mall.order.fegin.MemberFeginService;
 import com.msb.mall.order.fegin.ProductService;
 import com.msb.mall.order.fegin.WareFeignService;
 import com.msb.mall.order.service.OrderItemService;
+import com.msb.mall.order.utils.OrderMsgProducer;
 import com.msb.mall.order.vo.*;
-import io.seata.spring.annotation.GlobalTransactional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -67,6 +69,8 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> impleme
     @Autowired
     OrderItemService orderItemService;
 
+    @Autowired
+    OrderMsgProducer orderMsgProducer;
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
@@ -132,7 +136,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> impleme
      * @return
      * @throws NoStockExecption
      */
-    @GlobalTransactional
+    //@GlobalTransactional
     @Transactional()
     @Override
     public OrderResponseVO submitOrder(OrderSubmitVO vo) throws NoStockExecption {
@@ -163,11 +167,25 @@ public class OrderServiceImpl extends ServiceImpl<OrderDao, OrderEntity> impleme
         // 订单号  SKU_ID  SKU_NAME 商品数量
         // 封装 WareSkuLockVO 对象
         lockWareSkuStock(responseVO, orderCreateTO);
-
+        //int i=1/0;
+        orderMsgProducer.sendOrderMessage(orderCreateTO.getOrderEntity().getOrderSn());
 
         return responseVO;
     }
 
+    @Override
+    public PayVo getOrderPay(String orderSn) {
+        // 根据订单号查询相关的订单信息
+        OrderEntity orderEntity = this.getBaseMapper().getOrderByOrderSn(orderSn);
+        // 通过订单信息封装 PayVO对象
+        PayVo payVo = new PayVo();
+        payVo.setOut_trader_no(orderSn);
+        payVo.setTotal_amount(orderEntity.getTotalAmount().setScale(2, RoundingMode.UP).toString());
+        // 订单名称和订单描述
+        payVo.setSubject(orderEntity.getOrderSn());
+        payVo.setBody(orderEntity.getOrderSn());
+        return payVo;
+    }
 
 
     /**
